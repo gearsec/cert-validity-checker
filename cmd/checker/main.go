@@ -44,6 +44,11 @@ func handler(ctx context.Context) error {
 func run(ctx context.Context) error {
 	// Load configuration.
 	mgr := config.NewManager()
+	// Set slice defaults before RegisterStruct (struct tags don't support slices).
+	mgr.Register("check", config.Item{
+		Key:          "skip_name_prefixes",
+		DefaultValue: []string{"_"},
+	})
 	var cfg config.Config
 	mgr.RegisterStruct(&cfg)
 	if err := mgr.Load(&cfg); err != nil {

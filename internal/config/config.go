@@ -21,10 +21,13 @@ type SlackConfig struct {
 
 // CheckConfig holds certificate checking parameters.
 type CheckConfig struct {
-	ExpiryThresholdDays int    `mapstructure:"expiry_threshold_days" default:"15"`
-	HostedZoneFilter    string `mapstructure:"hosted_zone_filter"`
-	TLSTimeoutSeconds   int    `mapstructure:"tls_timeout_seconds" default:"10"`
-	Concurrency         int    `mapstructure:"concurrency" default:"10"`
+	ExpiryThresholdDays int      `mapstructure:"expiry_threshold_days" default:"15"`
+	HostedZoneFilter    string   `mapstructure:"hosted_zone_filter"`
+	TLSTimeoutSeconds   int      `mapstructure:"tls_timeout_seconds" default:"10"`
+	Concurrency         int      `mapstructure:"concurrency" default:"10"`
+	// SkipNamePrefixes lists DNS record name prefixes to skip entirely.
+	// Default ["_"] skips ACM validation CNAMEs and DKIM records.
+	SkipNamePrefixes    []string `mapstructure:"skip_name_prefixes"`
 }
 
 // LogConfig holds logging settings.

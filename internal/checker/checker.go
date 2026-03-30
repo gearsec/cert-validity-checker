@@ -3,6 +3,7 @@ package checker
 import (
 	"context"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"github.com/gearsec/cert-validity-checker/internal/certcheck"
@@ -68,11 +69,15 @@ func (c *Checker) Run(ctx context.Context) error {
 		return nil
 	}
 
-	// Step 2: Check certificates concurrently.
+	// Step 2: Filter out records whose names match configured skip prefixes.
+	records = c.filterRecords(records)
+	c.logger.Info("records after prefix filtering", "count", len(records))
+
+	// Step 3: Check certificates concurrently.
 	results := c.checkCerts(ctx, records)
 	c.logger.Info("completed certificate checks", "checked", len(results))
 
-	// Step 3: Filter to expiring non-ACM certs.
+	// Step 4: Filter to expiring non-ACM certs.
 	var expiring []certResult
 	for _, cr := range results {
 		if cr.result.Error != "" {
@@ -97,7 +102,7 @@ func (c *Checker) Run(ctx context.Context) error {
 		return nil
 	}
 
-	// Step 4: Look up EC2 instances and build alerts.
+	// Step 5: Look up EC2 instances and build alerts.
 	alerts := make([]slack.Alert, 0, len(expiring))
 	for _, cr := range expiring {
 		alert := slack.Alert{
@@ -123,7 +128,7 @@ func (c *Checker) Run(ctx context.Context) error {
 		alerts = append(alerts, alert)
 	}
 
-	// Step 5: Send Slack alerts.
+	// Step 6: Send Slack alerts.
 	c.logger.Info("sending alerts", "count", len(alerts))
 	if err := c.notifier.Send(ctx, alerts); err != nil {
 		return err
@@ -135,6 +140,32 @@ func (c *Checker) Run(ctx context.Context) error {
 		"alerts_sent", len(alerts),
 	)
 	return nil
+}
+
+// filterRecords removes records whose names start with any of the configured skip prefixes.
+func (c *Checker) filterRecords(records []route53.DNSRecord) []route53.DNSRecord {
+	if len(c.config.Check.SkipNamePrefixes) == 0 {
+		return records
+	}
+	filtered := records[:0]
+	for _, r := range records {
+		skip := false
+		for _, prefix := range c.config.Check.SkipNamePrefixes {
+			// Match against the subdomain portion (before the first dot).
+			label := r.Name
+			if idx := strings.Index(r.Name, "."); idx != -1 {
+				label = r.Name[:idx]
+			}
+			if strings.HasPrefix(label, prefix) {
+				skip = true
+				break
+			}
+		}
+		if !skip {
+			filtered = append(filtered, r)
+		}
+	}
+	return filtered
 }
 
 func (c *Checker) checkCerts(ctx context.Context, records []route53.DNSRecord) []certResult {

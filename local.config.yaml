@@ -10,6 +10,10 @@ check:
   hosted_zone_filter: ""
   tls_timeout_seconds: 10
   concurrency: 10
+  # Skip DNS record names that start with these prefixes.
+  # "_" covers ACM validation CNAMEs (_abc123.example.com) and DKIM records (_domainkey.example.com).
+  skip_name_prefixes:
+    - "_"
 
 log:
   level: "debug"
