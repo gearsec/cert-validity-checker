@@ -66,7 +66,7 @@ func (c *TLSChecker) CheckCertificate(ctx context.Context, host string, port int
 		result.Error = fmt.Sprintf("TLS dial failed: %v", err)
 		return result, nil
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	tlsConn, ok := conn.(*tls.Conn)
 	if !ok {
@@ -97,10 +97,7 @@ func isACMIssued(orgs []string, cn string) bool {
 			return true
 		}
 	}
-	if strings.Contains(strings.ToLower(cn), "amazon") {
-		return true
-	}
-	return false
+	return strings.Contains(strings.ToLower(cn), "amazon")
 }
 
 func formatIssuer(orgs []string, cn string) string {

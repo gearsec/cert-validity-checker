@@ -71,7 +71,7 @@ func newTestTLSServer(t *testing.T, issuerOrg string, notAfter time.Time) (net.L
 			if tlsConn, ok := conn.(*tls.Conn); ok {
 				_ = tlsConn.Handshake()
 			}
-			conn.Close()
+			_ = conn.Close()
 		}
 	}()
 
@@ -82,7 +82,7 @@ func newTestTLSServer(t *testing.T, issuerOrg string, notAfter time.Time) (net.L
 
 func TestCheckCertificate_ValidCert(t *testing.T) {
 	listener, port := newTestTLSServer(t, "Let's Encrypt", time.Now().Add(90*24*time.Hour))
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 
 	checker := NewTLSChecker(5)
 	result, err := checker.CheckCertificate(context.Background(), "127.0.0.1", port)
@@ -102,7 +102,7 @@ func TestCheckCertificate_ValidCert(t *testing.T) {
 
 func TestCheckCertificate_ExpiringCert(t *testing.T) {
 	listener, port := newTestTLSServer(t, "Internal CA", time.Now().Add(10*24*time.Hour))
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 
 	checker := NewTLSChecker(5)
 	result, err := checker.CheckCertificate(context.Background(), "127.0.0.1", port)
@@ -119,7 +119,7 @@ func TestCheckCertificate_ExpiringCert(t *testing.T) {
 
 func TestCheckCertificate_ACMDetection(t *testing.T) {
 	listener, port := newTestTLSServer(t, "Amazon", time.Now().Add(365*24*time.Hour))
-	defer listener.Close()
+	defer func() { _ = listener.Close() }()
 
 	checker := NewTLSChecker(5)
 	result, err := checker.CheckCertificate(context.Background(), "127.0.0.1", port)

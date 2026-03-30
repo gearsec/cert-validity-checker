@@ -91,7 +91,7 @@ func TestWebhookNotifier_Batching(t *testing.T) {
 func TestWebhookNotifier_ServerError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal error"))
+		_, _ = w.Write([]byte("internal error"))
 	}))
 	defer server.Close()
 
@@ -121,7 +121,9 @@ func TestWebhookNotifier_NoChannel(t *testing.T) {
 	}
 
 	var payload map[string]interface{}
-	json.Unmarshal(received, &payload)
+	if err := json.Unmarshal(received, &payload); err != nil {
+		t.Fatalf("failed to parse payload: %v", err)
+	}
 	if _, exists := payload["channel"]; exists {
 		t.Error("channel should not be set when empty")
 	}

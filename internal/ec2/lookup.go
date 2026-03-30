@@ -67,21 +67,24 @@ func (l *Lookup) lookupByFilter(ctx context.Context, filterName, ip string) (*In
 		return nil, err
 	}
 
-	for _, reservation := range out.Reservations {
-		for _, instance := range reservation.Instances {
-			info := &InstanceInfo{
-				InstanceID: aws.ToString(instance.InstanceId),
-				PrivateIP:  aws.ToString(instance.PrivateIpAddress),
-				PublicIP:   aws.ToString(instance.PublicIpAddress),
-			}
-			for _, tag := range instance.Tags {
-				if aws.ToString(tag.Key) == "Name" {
-					info.Name = aws.ToString(tag.Value)
-					break
-				}
-			}
-			return info, nil
+	if len(out.Reservations) == 0 {
+		return nil, nil
+	}
+	reservation := out.Reservations[0]
+	if len(reservation.Instances) == 0 {
+		return nil, nil
+	}
+	instance := reservation.Instances[0]
+	info := &InstanceInfo{
+		InstanceID: aws.ToString(instance.InstanceId),
+		PrivateIP:  aws.ToString(instance.PrivateIpAddress),
+		PublicIP:   aws.ToString(instance.PublicIpAddress),
+	}
+	for _, tag := range instance.Tags {
+		if aws.ToString(tag.Key) == "Name" {
+			info.Name = aws.ToString(tag.Value)
+			break
 		}
 	}
-	return nil, nil
+	return info, nil
 }

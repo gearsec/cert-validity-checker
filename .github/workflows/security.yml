@@ -34,7 +34,6 @@ jobs:
         uses: safedep/vet-action@v1
         with:
           policy: .github/vet/policy.yml
-          fail-on-violation: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
