@@ -1,0 +1,15 @@
+aws:
+  region: "us-east-1"
+
+slack:
+  webhook_url: "your-slack-webhook-url-here"
+  channel: "#infrastructure-alerts"
+
+check:
+  expiry_threshold_days: 15
+  hosted_zone_filter: ""
+  tls_timeout_seconds: 10
+  concurrency: 10
+
+log:
+  level: "debug"
